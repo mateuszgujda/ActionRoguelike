@@ -4,12 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "SProjectile.h"
 #include "SCharacter.generated.h"
 
 
 class UCameraComponent;
 class USpringArmComponent;
 class USInteractionComponent;
+class UAnimMontage;
 
 UCLASS()
 class ACTIONROGUELIKE_API ASCharacter : public ACharacter
@@ -18,8 +20,24 @@ class ACTIONROGUELIKE_API ASCharacter : public ACharacter
 
 protected:
 
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<AActor> ProjectileClass;
+	UPROPERTY(EditAnywhere, Category = "Attack")
+	TSubclassOf<ASProjectile> PrimaryProjectileClass;
+
+	UPROPERTY(EditAnywhere, Category = "Attack")
+	TSubclassOf<ASProjectile> SecondaryProjectileClass;
+
+	UPROPERTY(EditAnywhere, Category = "Attack")
+	TSubclassOf<ASProjectile> DashProjectileClass;
+
+
+
+	UPROPERTY(EditAnywhere, Category = "Attack")
+	UAnimMontage* AttackAnim;
+
+	FTimerHandle TimerHandle_PrimaryAttack;
+	FTimerHandle TimerHandle_SecondaryAttack;
+	FTimerHandle TimerHandle_DashAction;
+
 
 public:
 	// Sets default values for this character's properties
@@ -41,7 +59,15 @@ protected:
 	void MoveForward(float value);
 	void MoveRight(float value);
 	void PrimaryAttack();
+	void PrimaryAttack_TimeElapsed();
+	void SecondaryAttack();
+	void SecondaryAttack_TimeElapsed();
+	void DashAction();
+	void DashAction_TimeElapsed();
+	void FireProjectile(TSubclassOf<ASProjectile> Projectile);
 	void PrimaryInteract();
+	
+
 
 public:	
 	// Called every frame
