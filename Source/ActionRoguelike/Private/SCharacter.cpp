@@ -9,7 +9,7 @@
 #include "Components/CapsuleComponent.h"
 #include "SInteractionComponent.h"
 #include "DrawDebugHelpers.h"
-
+#include "SAttributeComponent.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -24,6 +24,7 @@ ASCharacter::ASCharacter()
 	CameraComp->SetupAttachment(SpringArmComp);
 
 	InteractionComp = CreateDefaultSubobject<USInteractionComponent>(TEXT("InteractionComponent"));
+	AttributeComp = CreateDefaultSubobject<USAttributeComponent>(TEXT("AttributeComponent"));
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	bUseControllerRotationYaw = false;
@@ -145,7 +146,5 @@ void ASCharacter::FireProjectile(TSubclassOf<ASProjectile> ProjectileClass) {
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	SpawnParams.Instigator = this;
 	AActor* SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTM, SpawnParams);
-	UCapsuleComponent* PlayerCapsule = GetCapsuleComponent();
-	PlayerCapsule->IgnoreActorWhenMoving(SpawnedProjectile, true);
 }
 
