@@ -57,6 +57,13 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USAttributeComponent* AttributeComp;
+
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HitFlash")
+	FColor HitFlashColor;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HitFlash")
+	float HitFlashSpeed;
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -71,6 +78,10 @@ protected:
 	void FireProjectile(TSubclassOf<ASProjectile> Projectile);
 	void PrimaryInteract();
 	
+	virtual void PostInitializeComponents() override;
+
+	UFUNCTION()
+	void OnHealthChanged(AActor* ChangeInstigator, USAttributeComponent* OwningComp, float NewHealth, float Delta);
 
 
 public:	

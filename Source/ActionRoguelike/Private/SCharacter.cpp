@@ -28,7 +28,22 @@ ASCharacter::ASCharacter()
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	bUseControllerRotationYaw = false;
+
+	HitFlashColor = FColor::Red;
+	HitFlashSpeed = 5.0f;
 }
+
+void ASCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	AttributeComp->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
+	UMeshComponent* MainMesh = GetMesh();
+	if (MainMesh) {
+		MainMesh->SetScalarParameterValueOnMaterials("HitFlashSpeed", HitFlashSpeed);
+		MainMesh->SetVectorParameterValueOnMaterials("HitFlashColor", FVector(HitFlashColor.R, HitFlashColor.G, HitFlashColor.B));
+	}
+}
+
 
 // Called when the game starts or when spawned
 void ASCharacter::BeginPlay()
@@ -101,6 +116,19 @@ void ASCharacter::DashAction() {
 void ASCharacter::PrimaryInteract() {
 	if (InteractionComp) {
 		InteractionComp->PrimaryInteract();
+	}
+}
+
+
+void ASCharacter::OnHealthChanged(AActor* ChangeInstigator, USAttributeComponent* OwningComp, float NewHealth, float Delta)
+{
+	if (Delta < 0) {
+		GetMesh()->SetScalarParameterValueOnMaterials("TimeToHit", GetWorld()->TimeSeconds);
+	}
+
+	if (NewHealth <= 0 && Delta < 0) {
+		APlayerController* PlayerController = Cast<APlayerController>(GetController());
+		DisableInput(PlayerController);
 	}
 }
 

@@ -10,6 +10,7 @@
 class USphereComponent;
 class UProjectileMovementComponent;
 class UParticleSystemComponent;
+class USoundBase;
 
 UCLASS()
 class ACTIONROGUELIKE_API ASMagicProjectile : public ASProjectile
@@ -24,8 +25,20 @@ protected:
 
 	UFUNCTION()
 	void OnActorOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+
+	virtual void OnActorHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="SFX")
+	UAudioComponent* AudioComp;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SFX")
+	USoundBase* ImpactSound;
+
+
+	void Explode(AActor* OtherActor);
 
 public:	
 	// Called every frame
