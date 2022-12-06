@@ -4,6 +4,7 @@
 #include "SCharacter.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -30,7 +31,9 @@ ASCharacter::ASCharacter()
 	bUseControllerRotationYaw = false;
 
 	HitFlashColor = FColor::Red;
+	HealFlashColor = FColor::Green;
 	HitFlashSpeed = 5.0f;
+	MuzzleLocationName = "Muzzle_01";
 }
 
 void ASCharacter::PostInitializeComponents()
@@ -96,20 +99,20 @@ void ASCharacter::MoveRight(float value)
 
 void ASCharacter::PrimaryAttack()
 {
-	PlayAnimMontage(AttackAnim);
+	PlayAttackEffects();
 	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &ASCharacter::PrimaryAttack_TimeElapsed, 0.2f);
 
 }
 
 void ASCharacter::SecondaryAttack()
 {
-	PlayAnimMontage(AttackAnim);
+	PlayAttackEffects();
 	GetWorldTimerManager().SetTimer(TimerHandle_SecondaryAttack, this, &ASCharacter::SecondaryAttack_TimeElapsed, 0.2f);
 
 }
 
 void ASCharacter::DashAction() {
-	PlayAnimMontage(AttackAnim);
+	PlayAttackEffects();
 	GetWorldTimerManager().SetTimer(TimerHandle_DashAction, this, &ASCharacter::DashAction_TimeElapsed, 0.2f);
 }
 
@@ -119,10 +122,23 @@ void ASCharacter::PrimaryInteract() {
 	}
 }
 
+void ASCharacter::PlayAttackEffects()
+{
+	PlayAnimMontage(AttackAnim);
+	UGameplayStatics::SpawnEmitterAttached(CastingEffect, GetMesh(), MuzzleLocationName, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget);
+}
+
 
 void ASCharacter::OnHealthChanged(AActor* ChangeInstigator, USAttributeComponent* OwningComp, float NewHealth, float Delta)
 {
-	if (Delta < 0) {
+	USkeletalMeshComponent* MeshComp = GetMesh();
+	if (MeshComp) {
+		if (Delta <= 0) {
+			MeshComp->SetVectorParameterValueOnMaterials("HitFlashColor", FVector(HitFlashColor.R, HitFlashColor.G, HitFlashColor.B));
+		}
+		else {
+			MeshComp->SetVectorParameterValueOnMaterials("HitFlashColor", FVector(HealFlashColor.R, HealFlashColor.G, HealFlashColor.B));
+		}
 		GetMesh()->SetScalarParameterValueOnMaterials("TimeToHit", GetWorld()->TimeSeconds);
 	}
 
@@ -146,33 +162,36 @@ void ASCharacter::PrimaryAttack_TimeElapsed() {
 
 
 void ASCharacter::FireProjectile(TSubclassOf<ASProjectile> ProjectileClass) {
-	FVector HandSocketLocation = GetMesh()->GetSocketLocation("Muzzle_01");
-	FHitResult HitResult;
-	FVector Start = CameraComp->GetComponentLocation();
-	FVector End = Start + GetControlRotation().Vector() * 5000.0f;
-	FCollisionObjectQueryParams ObjectQueryParams;
-	ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
-	ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
-	ObjectQueryParams.AddObjectTypesToQuery(ECC_Pawn);
+
+	if (ensureAlways(ProjectileClass)) {
+		FVector HandSocketLocation = GetMesh()->GetSocketLocation(MuzzleLocationName);
+		FHitResult HitResult;
+		FVector Start = CameraComp->GetComponentLocation();
+		FVector End = Start + GetControlRotation().Vector() * 5000.0f;
+		FCollisionObjectQueryParams ObjectQueryParams;
+		ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+		ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+		ObjectQueryParams.AddObjectTypesToQuery(ECC_Pawn);
 
 
-	bool bBlockingHit = GetWorld()->LineTraceSingleByObjectType(HitResult, Start, End, ObjectQueryParams);
-	FRotator LookingRotation;
-	FColor DebugColor;
-	if (bBlockingHit) {
-		LookingRotation = UKismetMathLibrary::FindLookAtRotation(HandSocketLocation, HitResult.ImpactPoint);
-		DebugColor = FColor::Green;
+		bool bBlockingHit = GetWorld()->LineTraceSingleByObjectType(HitResult, Start, End, ObjectQueryParams);
+		FRotator LookingRotation;
+		FColor DebugColor;
+		if (bBlockingHit) {
+			LookingRotation = UKismetMathLibrary::FindLookAtRotation(HandSocketLocation, HitResult.ImpactPoint);
+			DebugColor = FColor::Green;
+		}
+		else {
+			LookingRotation = UKismetMathLibrary::FindLookAtRotation(HandSocketLocation, End);
+			DebugColor = FColor::Red;
+		}
+		DrawDebugLine(GetWorld(), Start, End, DebugColor, false, 2.0f, 0, 2.0f);
+		FTransform SpawnTM = FTransform(LookingRotation, HandSocketLocation);
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		SpawnParams.Instigator = this;
+		AActor* SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTM, SpawnParams);
 	}
-	else {
-		LookingRotation = UKismetMathLibrary::FindLookAtRotation(HandSocketLocation, End);
-		DebugColor = FColor::Red;
-	}
-	DrawDebugLine(GetWorld(), Start, End, DebugColor, false, 2.0f, 0, 2.0f);
-	FTransform SpawnTM = FTransform(LookingRotation, HandSocketLocation);
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	SpawnParams.Instigator = this;
-	AActor* SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTM, SpawnParams);
 }
 

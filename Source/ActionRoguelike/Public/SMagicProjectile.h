@@ -37,6 +37,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SFX")
 	USoundBase* ImpactSound;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Impact")
+	TSubclassOf<UCameraShakeBase> ImpactShake;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage")
+	float DeltaHealthAmount;
 
 	void Explode(AActor* OtherActor);
 

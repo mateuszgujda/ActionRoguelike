@@ -35,6 +35,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Attack")
 	UAnimMontage* AttackAnim;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Attack")
+	UParticleSystem* CastingEffect;
+
 	FTimerHandle TimerHandle_PrimaryAttack;
 	FTimerHandle TimerHandle_SecondaryAttack;
 	FTimerHandle TimerHandle_DashAction;
@@ -45,6 +48,9 @@ public:
 	ASCharacter();
 
 protected:
+
+	UPROPERTY(VisibleAnywhere)
+	FName MuzzleLocationName;
 
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* SpringArmComp;
@@ -59,10 +65,13 @@ protected:
 	USAttributeComponent* AttributeComp;
 
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HitFlash")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HitFlash")
 	FColor HitFlashColor;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HitFlash")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HitFlash")
+	FColor HealFlashColor;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly , Category = "HitFlash")
 	float HitFlashSpeed;
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -77,6 +86,7 @@ protected:
 	void DashAction_TimeElapsed();
 	void FireProjectile(TSubclassOf<ASProjectile> Projectile);
 	void PrimaryInteract();
+	void PlayAttackEffects();
 	
 	virtual void PostInitializeComponents() override;
 

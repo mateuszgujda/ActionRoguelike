@@ -14,6 +14,7 @@ ASMagicProjectile::ASMagicProjectile()
 	SphereComp->OnComponentBeginOverlap.AddDynamic(this, &ASMagicProjectile::OnActorOverlap);
 	AudioComp = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
 	AudioComp->AttachTo(RootComponent);
+	DeltaHealthAmount = -20.0f;
 }
 
 void ASMagicProjectile::OnActorHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -53,7 +54,7 @@ void ASMagicProjectile::Explode(AActor* OtherActor) {
 
 		USAttributeComponent* AttributeComp = Cast<USAttributeComponent>(OtherActor->GetComponentByClass(USAttributeComponent::StaticClass()));
 		if (AttributeComp) {
-			AttributeComp->ApplyHealthChange(-20.0f);
+			AttributeComp->ApplyHealthChange(DeltaHealthAmount);
 			//UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactVFX, GetActorLocation(), GetActorRotation());
 		}
 
@@ -61,7 +62,9 @@ void ASMagicProjectile::Explode(AActor* OtherActor) {
 		if (ImpactSound) {
 			UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, GetActorLocation());
 		}
-
+		if (ImpactShake) {
+			UGameplayStatics::PlayWorldCameraShake(GetWorld(), ImpactShake, OtherActor->GetActorLocation(), 0.0f, 1000.0f);
+		}
 		Destroy();
 	}
 }
