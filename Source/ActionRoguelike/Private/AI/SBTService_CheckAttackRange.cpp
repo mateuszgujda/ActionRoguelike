@@ -4,6 +4,7 @@
 #include "AI/SBTService_CheckAttackRange.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
+#include "AI/SAIStatics.h"
 
 void USBTService_CheckAttackRange::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
@@ -11,7 +12,7 @@ void USBTService_CheckAttackRange::TickNode(UBehaviorTreeComponent& OwnerComp, u
 
 	UBlackboardComponent* BlackboardComp = OwnerComp.GetBlackboardComponent();
 	if (ensure(BlackboardComp)) {
-		AActor* TargetActor = Cast<AActor>(BlackboardComp->GetValueAsObject("TargetActor"));
+		AActor* TargetActor = Cast<AActor>(BlackboardComp->GetValueAsObject(USAIStatics::GetAITargetActorKeyName()));
 		if (TargetActor) {
 			AAIController* MyController = OwnerComp.GetAIOwner();
 			if (ensure(MyController)) {

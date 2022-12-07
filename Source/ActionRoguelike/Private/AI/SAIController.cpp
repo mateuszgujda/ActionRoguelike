@@ -4,6 +4,7 @@
 #include "AI/SAIController.h"
 #include "Kismet/GameplayStatics.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "AI/SAIStatics.h"
 
 void ASAIController::BeginPlay()
 {
@@ -11,10 +12,10 @@ void ASAIController::BeginPlay()
 
 	RunBehaviorTree(BehaviorTree);
 
-	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
-	if (PlayerPawn) {
-		GetBlackboardComponent()->SetValueAsVector("MoveToLocation", PlayerPawn->GetActorLocation());
+	//APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	//if (PlayerPawn) {
+	//	GetBlackboardComponent()->SetValueAsVector(USAIStatics::GetAIMoveToLocationKeyName(), PlayerPawn->GetActorLocation());
 
-		GetBlackboardComponent()->SetValueAsObject("TargetActor", PlayerPawn);
-	}
+	//	GetBlackboardComponent()->SetValueAsObject(USAIStatics::GetAITargetActorKeyName(), PlayerPawn);
+	//}
 }

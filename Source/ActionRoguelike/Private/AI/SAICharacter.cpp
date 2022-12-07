@@ -2,33 +2,28 @@
 
 
 #include "AI/SAICharacter.h"
-
+#include "AIController.h"
+#include "Perception/PawnSensingComponent.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "DrawDebugHelpers.h"
+#include "AI/SAIStatics.h"
+#include "SAttributeComponent.h"
 // Sets default values
 ASAICharacter::ASAICharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
 
+	PawnSensingComp = CreateDefaultSubobject<UPawnSensingComponent>("PawnSesingComp");
+	PawnSensingComp->OnSeePawn.AddDynamic(this, &ASAICharacter::OnPawnSeen);
+
+	AttributeComp = CreateDefaultSubobject<USAttributeComponent>("AttributeComp");
 }
 
-// Called when the game starts or when spawned
-void ASAICharacter::BeginPlay()
-{
-	Super::BeginPlay();
-	
+void ASAICharacter::OnPawnSeen(APawn* Pawn) {
+	AAIController* AIC = Cast<AAIController>(GetController());
+	if (AIC) {
+		UBlackboardComponent* BBComp = AIC->GetBlackboardComponent();
+		BBComp->SetValueAsObject(USAIStatics::GetAITargetActorKeyName(), Pawn);
+
+		DrawDebugString(GetWorld(), GetActorLocation(), "Player Spotted", nullptr, FColor::White, 4.0f, true);
+	}
 }
-
-// Called every frame
-void ASAICharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-// Called to bind functionality to input
-void ASAICharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-}
-
