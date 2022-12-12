@@ -21,7 +21,7 @@ void ASPowerUpBase::Interact_Implementation(APawn* InstigatorPawn)
 	if (InstigatorPawn) {
 		USAttributeComponent* AttributeComp = Cast<USAttributeComponent>(InstigatorPawn->GetComponentByClass(USAttributeComponent::StaticClass()));
 		if (AttributeComp && !AttributeComp->IsMaxHealth()) {
-			AttributeComp->ApplyHealthChange(BoostValue);
+			AttributeComp->ApplyHealthChange(this,BoostValue);
 			//UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactVFX, GetActorLocation(), GetActorRotation());
 
 			StartRecharge();

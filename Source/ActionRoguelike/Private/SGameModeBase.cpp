@@ -37,7 +37,7 @@ void ASGameModeBase::OnQueryCompleted(UEnvQueryInstanceBlueprintWrapper* QueryIn
 	for (TActorIterator<ASAICharacter> It(GetWorld()); It; ++It) {
 		ASAICharacter* Bot = *It;
 
-		USAttributeComponent* AttributeComp = Cast<USAttributeComponent>(Bot->GetComponentByClass(USAttributeComponent::StaticClass()));
+		USAttributeComponent* AttributeComp = USAttributeComponent::GetAttributes(Bot);
 		if (AttributeComp && AttributeComp->IsAlive()) {
 			NrOfAliveBots++;
 		}

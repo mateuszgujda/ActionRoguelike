@@ -15,7 +15,7 @@ EBTNodeResult::Type USBTTask_Heal::ExecuteTask(UBehaviorTreeComponent& OwnerComp
 			return EBTNodeResult::Failed;
 		}
 
-		AttrComp->ApplyHealthChange(AttrComp->GetMaxHealth() - AttrComp->GetCurrentHealth());
+		AttrComp->ApplyHealthChange(Pawn, AttrComp->GetMaxHealth() - AttrComp->GetCurrentHealth());
 
 		return AttrComp->IsMaxHealth() ? EBTNodeResult::Succeeded : EBTNodeResult::Failed;
 	}

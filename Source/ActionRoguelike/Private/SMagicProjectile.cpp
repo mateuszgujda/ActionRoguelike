@@ -54,7 +54,7 @@ void ASMagicProjectile::Explode(AActor* OtherActor) {
 
 		USAttributeComponent* AttributeComp = Cast<USAttributeComponent>(OtherActor->GetComponentByClass(USAttributeComponent::StaticClass()));
 		if (AttributeComp) {
-			AttributeComp->ApplyHealthChange(DeltaHealthAmount);
+			AttributeComp->ApplyHealthChange(GetInstigator(), DeltaHealthAmount);
 			//UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactVFX, GetActorLocation(), GetActorRotation());
 		}
 
