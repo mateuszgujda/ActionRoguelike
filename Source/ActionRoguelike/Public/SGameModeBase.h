@@ -10,6 +10,26 @@
 
 class UEnvQuery;
 class UEnvQueryInstanceBlueprintWrapper;
+class ASPowerUpBase;
+
+USTRUCT()
+struct FPowerUpData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<ASPowerUpBase> powerUp;
+
+	UPROPERTY(EditDefaultsOnly)
+	float weight;
+
+	FPowerUpData() {
+		weight = 0.0f;
+		powerUp = nullptr;
+
+	}
+};
+
 /**
  * 
  */
@@ -21,6 +41,7 @@ class ACTIONROGUELIKE_API ASGameModeBase : public AGameModeBase
 protected:
 	
 	FTimerHandle TimerHandle_SpawnBots;
+	FTimerHandle TimerHandle_PowerUps;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
 	float SpawnTimerInterval;
@@ -34,14 +55,52 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
 	TSubclassOf<AActor> MinionClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Buffs")
+	UEnvQuery* SpawnBuffsQuery;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Buffs")
+	UCurveFloat* BuffAmount;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Buffs")
+	TArray<FPowerUpData> PowerUpsToSpawn;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Buffs")
+	float PowerUpsTimerInterval;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Respawn")
+	float RespawnDelay;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Credits")
+	float CreditPointsForKill;
+
 	UFUNCTION()
-	void OnQueryCompleted(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus);
+	void OnBotQueryCompleted(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus);
 
 	UFUNCTION()
 	void SpawnBotTimerElapsed();
+
+	UFUNCTION()
+	void RespawnPlayerElapsed(AController* PlayerController);
+
+	UFUNCTION()
+	int PickRandomPowerUpIndex();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Buffs")
+	float SumOfBuffWeights;
+
+	UFUNCTION()
+	void SpawnPowerUpTimerElapsed();
+
+	UFUNCTION()
+	void OnPowerUpsQueryCompleted(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus);
+
 public:
 	ASGameModeBase();
 
 	virtual void StartPlay() override;
 
+	virtual void OnActorKilled(AActor* VictimActor, AActor* KillerActor);
+
+	UFUNCTION(Exec)
+	void KillAllAI();
 };

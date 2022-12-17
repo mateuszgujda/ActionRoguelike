@@ -45,6 +45,8 @@ protected:
 
 	void Explode(AActor* OtherActor);
 
+	void PostInitializeComponents() override;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

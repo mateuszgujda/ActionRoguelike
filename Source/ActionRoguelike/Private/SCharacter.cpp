@@ -47,6 +47,11 @@ void ASCharacter::PostInitializeComponents()
 	}
 }
 
+FVector ASCharacter::GetPawnViewLocation() const
+{
+	return CameraComp->GetComponentLocation();
+}
+
 
 // Called when the game starts or when spawned
 void ASCharacter::BeginPlay()
@@ -77,6 +82,11 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("DashAction", IE_Pressed, this, &ASCharacter::DashAction);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("PrimaryInteract", IE_Pressed, this, &ASCharacter::PrimaryInteract);
+}
+
+void ASCharacter::HealSelf(float Amount /* = 100*/)
+{
+	AttributeComp->ApplyHealthChange(this, Amount);
 }
 
 void ASCharacter::MoveForward(float value)

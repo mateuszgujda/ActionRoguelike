@@ -32,6 +32,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Boost")
 	float BoostValue;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Cost")
+	float InteractionCost;
+
 	FTimerHandle RechargeTimeHandle;
 	ECollisionEnabled::Type DefaultCollision;
 	// Called when the game starts or when spawned

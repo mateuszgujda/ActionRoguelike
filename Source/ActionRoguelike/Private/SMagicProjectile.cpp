@@ -6,12 +6,12 @@
 #include "Components/AudioComponent.h"
 #include "SAttributeComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "SGameplayFunctionLibrary.h"
 
 // Sets default values
 ASMagicProjectile::ASMagicProjectile()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	SphereComp->OnComponentBeginOverlap.AddDynamic(this, &ASMagicProjectile::OnActorOverlap);
 	AudioComp = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
 	AudioComp->AttachTo(RootComponent);
 	DeltaHealthAmount = -20.0f;
@@ -19,7 +19,10 @@ ASMagicProjectile::ASMagicProjectile()
 
 void ASMagicProjectile::OnActorHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	Explode(OtherActor);
+	if (OtherActor && OtherActor != GetInstigator()) {
+		USGameplayFunctionLibrary::ApplyDirectionalDamage(GetInstigator(), OtherActor, DeltaHealthAmount, Hit);
+		Explode(OtherActor);
+	}
 }
 
 // Called when the game starts or when spawned
@@ -44,27 +47,28 @@ void ASMagicProjectile::Tick(float DeltaTime)
 }
 
 void ASMagicProjectile::OnActorOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
-	Explode(OtherActor);
+	if (OtherActor && OtherActor != GetInstigator()) {
+		USGameplayFunctionLibrary::ApplyDirectionalDamage(GetInstigator(), OtherActor, DeltaHealthAmount, SweepResult);
+		Explode(OtherActor);
+	}
 }
 
 
 void ASMagicProjectile::Explode(AActor* OtherActor) {
-	if (OtherActor && OtherActor != GetInstigator()) {
-
-
-		USAttributeComponent* AttributeComp = Cast<USAttributeComponent>(OtherActor->GetComponentByClass(USAttributeComponent::StaticClass()));
-		if (AttributeComp) {
-			AttributeComp->ApplyHealthChange(GetInstigator(), DeltaHealthAmount);
-			//UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactVFX, GetActorLocation(), GetActorRotation());
-		}
-
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactVFX, GetActorLocation(), GetActorRotation());
-		if (ImpactSound) {
-			UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, GetActorLocation());
-		}
-		if (ImpactShake) {
-			UGameplayStatics::PlayWorldCameraShake(GetWorld(), ImpactShake, OtherActor->GetActorLocation(), 0.0f, 1000.0f);
-		}
-		Destroy();
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactVFX, GetActorLocation(), GetActorRotation());
+	if (ImpactSound) {
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, GetActorLocation());
 	}
+	if (ImpactShake) {
+		UGameplayStatics::PlayWorldCameraShake(GetWorld(), ImpactShake, OtherActor->GetActorLocation(), 0.0f, 1000.0f);
+	}
+	Destroy();
+}
+
+void ASMagicProjectile::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	SphereComp->OnComponentBeginOverlap.AddDynamic(this, &ASMagicProjectile::OnActorOverlap);
+	SphereComp->OnComponentHit.AddDynamic(this, &ASMagicProjectile::OnActorHit);
 }

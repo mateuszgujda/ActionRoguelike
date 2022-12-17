@@ -3,6 +3,7 @@
 
 #include "SPowerUpBase.h"
 #include "Kismet/GameplayStatics.h"
+#include "SPlayerState.h"
 #include "SAttributeComponent.h"
 
 // Sets default values
@@ -12,6 +13,7 @@ ASPowerUpBase::ASPowerUpBase()
 	PrimaryActorTick.bCanEverTick = true;
 	BoostValue = 20.0f;
 	RechargeTime = 10.0f;
+	InteractionCost = 0.0f;
 	RootComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
 	SetRootComponent(RootComp);
 }
@@ -19,12 +21,17 @@ ASPowerUpBase::ASPowerUpBase()
 void ASPowerUpBase::Interact_Implementation(APawn* InstigatorPawn)
 {
 	if (InstigatorPawn) {
-		USAttributeComponent* AttributeComp = Cast<USAttributeComponent>(InstigatorPawn->GetComponentByClass(USAttributeComponent::StaticClass()));
-		if (AttributeComp && !AttributeComp->IsMaxHealth()) {
-			AttributeComp->ApplyHealthChange(this,BoostValue);
-			//UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactVFX, GetActorLocation(), GetActorRotation());
+		ASPlayerState* PS = Cast<ASPlayerState>(InstigatorPawn->GetPlayerState());
+		if (PS && PS->GetCredits() >= InteractionCost) {
+			USAttributeComponent* AttributeComp = Cast<USAttributeComponent>(InstigatorPawn->GetComponentByClass(USAttributeComponent::StaticClass()));
+			if (AttributeComp && !AttributeComp->IsMaxHealth()) {
+				if (AttributeComp->ApplyHealthChange(this, BoostValue)) {
+					PS->ApplyCreditsChange(-InteractionCost);
+				}
+				//UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactVFX, GetActorLocation(), GetActorRotation());
 
-			StartRecharge();
+				StartRecharge();
+			}
 		}
 	}
 }

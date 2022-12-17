@@ -8,7 +8,9 @@
 #include "DrawDebugHelpers.h"
 #include "AI/SAIStatics.h"
 #include "BrainComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "UI/SWorldUserWidget.h"
+#include "Components/CapsuleComponent.h"
 #include "SAttributeComponent.h"
 // Sets default values
 ASAICharacter::ASAICharacter()
@@ -18,6 +20,9 @@ ASAICharacter::ASAICharacter()
 
 	AttributeComp = CreateDefaultSubobject<USAttributeComponent>("AttributeComp");
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
+	GetMesh()->SetGenerateOverlapEvents(true);
 
 	HitFlashColor = FColor::Red;
 	HealFlashColor = FColor::Green;
@@ -48,7 +53,7 @@ void ASAICharacter::OnHealthChanged(AActor* ChangeInstigator, USAttributeCompone
 	if (!ActiveHealthBar) {
 		ActiveHealthBar = CreateWidget<USWorldUserWidget>(GetWorld(), HealthBarWidgetClass);
 		if (ActiveHealthBar) {
-			ActiveHealthBar->AttachedActor = this;
+			ActiveHealthBar->SetAttachedActor(this);
 			ActiveHealthBar->AddToViewport();
 		}
 	}
@@ -65,6 +70,9 @@ void ASAICharacter::OnHealthChanged(AActor* ChangeInstigator, USAttributeCompone
 
 			GetMesh()->SetAllBodiesSimulatePhysics(true);
 			GetMesh()->SetCollisionProfileName("Ragdoll");
+
+			GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			GetCharacterMovement()->DisableMovement();
 
 			SetLifeSpan(10.0f);
 		}

@@ -6,28 +6,60 @@
 #include "AI/SAICharacter.h"
 #include "SAttributeComponent.h"
 #include "EngineUtils.h"
+#include "SCharacter.h"
+#include "SPlayerState.h"
+
+
+static TAutoConsoleVariable<bool> CVarSpawnBots(TEXT("su.SpawnBots"), true, TEXT("Enable Spawning of Bots via Timer"), ECVF_Cheat);
 
 ASGameModeBase::ASGameModeBase()
 {
 	SpawnTimerInterval = 2.0f;
+	RespawnDelay = 2.0f;
+	CreditPointsForKill = 20.0f;
+	SumOfBuffWeights = 0.0f;
 }
 
 void ASGameModeBase::StartPlay() {
 	Super::StartPlay();
 
 	GetWorldTimerManager().SetTimer(TimerHandle_SpawnBots, this, &ASGameModeBase::SpawnBotTimerElapsed, SpawnTimerInterval, true);
+	float tempSum = 0;
+	for (int i = 0; i < PowerUpsToSpawn.Num(); i++) {
+		tempSum += PowerUpsToSpawn[i].weight;
+	}
+	SumOfBuffWeights = tempSum;
+	GetWorldTimerManager().SetTimer(TimerHandle_PowerUps, this, &ASGameModeBase::SpawnPowerUpTimerElapsed, PowerUpsTimerInterval, true);
+}
+
+void ASGameModeBase::KillAllAI()
+{
+	for (TActorIterator<ASAICharacter> It(GetWorld()); It; ++It) {
+		ASAICharacter* Bot = *It;
+
+		USAttributeComponent* AttributeComp = USAttributeComponent::GetAttributes(Bot);
+		if (AttributeComp && AttributeComp->IsAlive()) {
+			AttributeComp->Kill(this); //@todo Pass in player for kill credits?
+		}
+	}
 }
 
 void ASGameModeBase::SpawnBotTimerElapsed()
 {
+
 	UEnvQueryInstanceBlueprintWrapper* QueryInstance = UEnvQueryManager::RunEQSQuery(this, SpawnBotQuery, this, EEnvQueryRunMode::RandomBest5Pct, nullptr);
 	if (ensure(QueryInstance)) {
-		QueryInstance->GetOnQueryFinishedEvent().AddDynamic(this, &ASGameModeBase::OnQueryCompleted);
+		QueryInstance->GetOnQueryFinishedEvent().AddDynamic(this, &ASGameModeBase::OnBotQueryCompleted);
 	}
 }
 
+void ASGameModeBase::OnBotQueryCompleted(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus) {
+	
+	if (!CVarSpawnBots.GetValueOnGameThread()) {
+		UE_LOG(LogTemp, Warning, TEXT("Bot spawning disabled by CVarSpawnBots"))
+		return;
+	}
 
-void ASGameModeBase::OnQueryCompleted(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus) {
 	if (QueryStatus != EEnvQueryStatus::Success) {
 		UE_LOG(LogTemp, Warning, TEXT("Spawn Bot EQS Query Failed!"));
 		return;
@@ -61,4 +93,62 @@ void ASGameModeBase::OnQueryCompleted(UEnvQueryInstanceBlueprintWrapper* QueryIn
 	if (Locations.Num() > 0) {
 		GetWorld()->SpawnActor<AActor>(MinionClass, Locations[0], FRotator::ZeroRotator);
 	}
+}
+
+void ASGameModeBase::OnActorKilled(AActor* VictimActor, AActor* KillerActor)
+{
+	ASCharacter* Player = Cast<ASCharacter>(VictimActor);
+	if (Player) {
+		FTimerHandle TimerHandle_RespawnTimer;
+		FTimerDelegate Delegate;
+
+		Delegate.BindUFunction(this, "RespawnPlayerElapsed", Player->GetController());
+		GetWorldTimerManager().SetTimer(TimerHandle_RespawnTimer, Delegate, RespawnDelay, false);
+	}
+
+	ASCharacter* PlayerKiller = Cast<ASCharacter>(KillerActor);
+	if (PlayerKiller) {
+		UE_LOG(LogTemp, Log, TEXT("Added Kill Credits!"));
+		ASPlayerState* PS = Cast<ASPlayerState>(PlayerKiller->GetPlayerState());
+		PS->ApplyCreditsChange(CreditPointsForKill);
+	}
+}
+
+void ASGameModeBase::RespawnPlayerElapsed(AController* PlayerController)
+{
+	if (ensure(PlayerController)) {
+		UE_LOG(LogTemp, Log, TEXT("Respawning Player"));
+		PlayerController->UnPossess();
+		RestartPlayer(PlayerController);
+	}
+}
+
+int ASGameModeBase::PickRandomPowerUpIndex()
+{
+	int index = -1;
+	float rnd = FMath::RandRange(0.0f, SumOfBuffWeights);
+	for (int i = 0; i < PowerUpsToSpawn.Num(); i++) {
+		float item_weight = PowerUpsToSpawn[i].weight;
+		if (rnd < item_weight) {
+			index = i;
+			break;
+		}
+		rnd -= item_weight;
+	}
+
+	check(index >= 0)
+	return index;
+}
+
+
+void ASGameModeBase::SpawnPowerUpTimerElapsed()
+{
+	UEnvQueryInstanceBlueprintWrapper* QueryInstance = UEnvQueryManager::RunEQSQuery(this, SpawnBuffsQuery, this, EEnvQueryRunMode::RandomBest5Pct, nullptr);
+	if (ensure(QueryInstance)) {
+		QueryInstance->GetOnQueryFinishedEvent().AddDynamic(this, &ASGameModeBase::OnPowerUpsQueryCompleted);
+	}
+}
+
+void ASGameModeBase::OnPowerUpsQueryCompleted(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus) {
+
 }
