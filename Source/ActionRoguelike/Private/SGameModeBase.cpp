@@ -8,9 +8,12 @@
 #include "EngineUtils.h"
 #include "SCharacter.h"
 #include "SPlayerState.h"
+#include "SPowerUpBase.h"
+#include <Kismet/GameplayStatics.h>
 
 
 static TAutoConsoleVariable<bool> CVarSpawnBots(TEXT("su.SpawnBots"), true, TEXT("Enable Spawning of Bots via Timer"), ECVF_Cheat);
+static TAutoConsoleVariable<bool> CVarSpawnPowerUps(TEXT("su.SpawnPowerUps"), true, TEXT("Enable Spawnig of PowerUps via Timer"), ECVF_Cheat);
 
 ASGameModeBase::ASGameModeBase()
 {
@@ -18,6 +21,7 @@ ASGameModeBase::ASGameModeBase()
 	RespawnDelay = 2.0f;
 	CreditPointsForKill = 20.0f;
 	SumOfBuffWeights = 0.0f;
+	PowerUpsTimerInterval = 2.0f;
 }
 
 void ASGameModeBase::StartPlay() {
@@ -150,5 +154,37 @@ void ASGameModeBase::SpawnPowerUpTimerElapsed()
 }
 
 void ASGameModeBase::OnPowerUpsQueryCompleted(UEnvQueryInstanceBlueprintWrapper* QueryInstance, EEnvQueryStatus::Type QueryStatus) {
+	if (!CVarSpawnPowerUps.GetValueOnGameThread()) {
+		UE_LOG(LogTemp, Warning, TEXT("PowerUps spawning disabled by CVarSpawnPowerUps"));
+	}
 
+	if (QueryStatus != EEnvQueryStatus::Success) {
+		UE_LOG(LogTemp, Warning, TEXT("Spawn PowerUp EQS Query Failed!"));
+		return;
+	}
+
+
+	TArray<AActor*> FoundPowerUps;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASPowerUpBase::StaticClass(), FoundPowerUps);
+	float MinBuffs, MaxBuffs;
+	BuffAmount->GetValueRange(MinBuffs, MaxBuffs);
+
+	if (FoundPowerUps.Num() >= (int)MaxBuffs) {
+		UE_LOG(LogTemp, Warning, TEXT("Finished PowerUps spawning, clearing timer"));
+		GetWorldTimerManager().ClearTimer(TimerHandle_PowerUps);
+		return;
+	}
+
+	if (FoundPowerUps.Num() < BuffAmount->GetFloatValue(GetWorld()->TimeSeconds)) {
+		int DrawPowerUpIndex = PickRandomPowerUpIndex();
+		UE_LOG(LogTemp, Log, TEXT("Picked power up with index %d"), DrawPowerUpIndex);
+		TArray<FVector> Locations = QueryInstance->GetResultsAsLocations();
+		if (Locations.Num() > 0) {
+			FVector PowerUpLocation = Locations[0];
+			PowerUpLocation.Z = 90.0f;
+			GetWorld()->SpawnActor<AActor>(PowerUpsToSpawn[DrawPowerUpIndex].powerUp, PowerUpLocation, FRotator::ZeroRotator);
+		}
+	}
+	
+	UE_LOG(LogTemp, Log, TEXT("At maximum current PowerUps capacity. Skipping spawn."));
 }

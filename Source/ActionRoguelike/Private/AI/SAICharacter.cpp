@@ -11,6 +11,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "UI/SWorldUserWidget.h"
 #include "Components/CapsuleComponent.h"
+#include "SActionComponent.h"
 #include "SAttributeComponent.h"
 // Sets default values
 ASAICharacter::ASAICharacter()
@@ -19,6 +20,7 @@ ASAICharacter::ASAICharacter()
 	PawnSensingComp = CreateDefaultSubobject<UPawnSensingComponent>("PawnSesingComp");
 
 	AttributeComp = CreateDefaultSubobject<USAttributeComponent>("AttributeComp");
+	ActionComp = CreateDefaultSubobject<USActionComponent>("ActionComp");
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
@@ -31,8 +33,15 @@ ASAICharacter::ASAICharacter()
 }
 
 void ASAICharacter::OnPawnSeen(APawn* Pawn) {
+	
+	if (PlayerSensedWidgetClass) {
+		SpawnPlayerSensedWidget(Pawn);
+	}
+	else {
+		DrawDebugString(GetWorld(), GetActorLocation(), "Player Spotted", nullptr, FColor::White, 4.0f, true);
+	}
 	SetTargetActor(Pawn);
-	DrawDebugString(GetWorld(), GetActorLocation(), "Player Spotted", nullptr, FColor::White, 4.0f, true);
+
 }
 
 void ASAICharacter::PostInitializeComponents() {
@@ -68,6 +77,8 @@ void ASAICharacter::OnHealthChanged(AActor* ChangeInstigator, USAttributeCompone
 				Control->GetBrainComponent()->StopLogic("Killed");
 			}
 
+			PawnSensingComp->Deactivate();
+
 			GetMesh()->SetAllBodiesSimulatePhysics(true);
 			GetMesh()->SetCollisionProfileName("Ragdoll");
 
@@ -95,5 +106,21 @@ void ASAICharacter::SetTargetActor(AActor* Target) {
 	if (AIC) {
 		UBlackboardComponent* BBComp = AIC->GetBlackboardComponent();
 		BBComp->SetValueAsObject(USAIStatics::GetAITargetActorKeyName(), Target);
+	}
+}
+
+void ASAICharacter::SpawnPlayerSensedWidget(APawn* Pawn)
+{
+	AAIController* AIC = Cast<AAIController>(GetController());
+	if (AIC) {
+		UBlackboardComponent* BBComp = AIC->GetBlackboardComponent();
+		APawn* TargetActor = Cast<APawn>(BBComp->GetValueAsObject(USAIStatics::GetAITargetActorKeyName()));
+		if (TargetActor != Pawn && Pawn->IsPlayerControlled()) {
+			USWorldUserWidget* PlayerSesedWidget = CreateWidget<USWorldUserWidget>(GetWorld(), PlayerSensedWidgetClass);
+			if (PlayerSesedWidget) {
+				PlayerSesedWidget->SetAttachedActor(this);
+				PlayerSesedWidget->AddToViewport(10);
+			}
+		}
 	}
 }

@@ -11,6 +11,7 @@
 #include "SInteractionComponent.h"
 #include "DrawDebugHelpers.h"
 #include "SAttributeComponent.h"
+#include "SActionComponent.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -26,6 +27,7 @@ ASCharacter::ASCharacter()
 
 	InteractionComp = CreateDefaultSubobject<USInteractionComponent>(TEXT("InteractionComponent"));
 	AttributeComp = CreateDefaultSubobject<USAttributeComponent>(TEXT("AttributeComponent"));
+	ActionComp = CreateDefaultSubobject<USActionComponent>(TEXT("ActionComponent"));
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	bUseControllerRotationYaw = false;
@@ -82,6 +84,8 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("DashAction", IE_Pressed, this, &ASCharacter::DashAction);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("PrimaryInteract", IE_Pressed, this, &ASCharacter::PrimaryInteract);
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ASCharacter::SprintStart);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ASCharacter::SprintStop);
 }
 
 void ASCharacter::HealSelf(float Amount /* = 100*/)
@@ -109,21 +113,17 @@ void ASCharacter::MoveRight(float value)
 
 void ASCharacter::PrimaryAttack()
 {
-	PlayAttackEffects();
-	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &ASCharacter::PrimaryAttack_TimeElapsed, 0.2f);
-
+	ActionComp->StartActionByName(this, "PrimaryAttack");
 }
 
 void ASCharacter::SecondaryAttack()
 {
-	PlayAttackEffects();
-	GetWorldTimerManager().SetTimer(TimerHandle_SecondaryAttack, this, &ASCharacter::SecondaryAttack_TimeElapsed, 0.2f);
+	ActionComp->StartActionByName(this, "Blackhole");
 
 }
 
 void ASCharacter::DashAction() {
-	PlayAttackEffects();
-	GetWorldTimerManager().SetTimer(TimerHandle_DashAction, this, &ASCharacter::DashAction_TimeElapsed, 0.2f);
+	ActionComp->StartActionByName(this, "Dash");
 }
 
 void ASCharacter::PrimaryInteract() {
@@ -131,13 +131,6 @@ void ASCharacter::PrimaryInteract() {
 		InteractionComp->PrimaryInteract();
 	}
 }
-
-void ASCharacter::PlayAttackEffects()
-{
-	PlayAnimMontage(AttackAnim);
-	UGameplayStatics::SpawnEmitterAttached(CastingEffect, GetMesh(), MuzzleLocationName, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget);
-}
-
 
 void ASCharacter::OnHealthChanged(AActor* ChangeInstigator, USAttributeComponent* OwningComp, float NewHealth, float Delta)
 {
@@ -158,50 +151,14 @@ void ASCharacter::OnHealthChanged(AActor* ChangeInstigator, USAttributeComponent
 	}
 }
 
-void ASCharacter::DashAction_TimeElapsed() {
-	FireProjectile(DashProjectileClass);
+
+
+void ASCharacter::SprintStart()
+{
+	ActionComp->StartActionByName(this, "Sprint");
 }
 
-void ASCharacter::SecondaryAttack_TimeElapsed() {
-	FireProjectile(SecondaryProjectileClass);
+void ASCharacter::SprintStop()
+{
+	ActionComp->StopActionByName(this, "Sprint");
 }
-
-void ASCharacter::PrimaryAttack_TimeElapsed() {
-	FireProjectile(PrimaryProjectileClass);
-}
-
-
-void ASCharacter::FireProjectile(TSubclassOf<ASProjectile> ProjectileClass) {
-
-	if (ensureAlways(ProjectileClass)) {
-		FVector HandSocketLocation = GetMesh()->GetSocketLocation(MuzzleLocationName);
-		FHitResult HitResult;
-		FVector Start = CameraComp->GetComponentLocation();
-		FVector End = Start + GetControlRotation().Vector() * 5000.0f;
-		FCollisionObjectQueryParams ObjectQueryParams;
-		ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
-		ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
-		ObjectQueryParams.AddObjectTypesToQuery(ECC_Pawn);
-
-
-		bool bBlockingHit = GetWorld()->LineTraceSingleByObjectType(HitResult, Start, End, ObjectQueryParams);
-		FRotator LookingRotation;
-		FColor DebugColor;
-		if (bBlockingHit) {
-			LookingRotation = UKismetMathLibrary::FindLookAtRotation(HandSocketLocation, HitResult.ImpactPoint);
-			DebugColor = FColor::Green;
-		}
-		else {
-			LookingRotation = UKismetMathLibrary::FindLookAtRotation(HandSocketLocation, End);
-			DebugColor = FColor::Red;
-		}
-		DrawDebugLine(GetWorld(), Start, End, DebugColor, false, 2.0f, 0, 2.0f);
-		FTransform SpawnTM = FTransform(LookingRotation, HandSocketLocation);
-
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		SpawnParams.Instigator = this;
-		AActor* SpawnedProjectile = GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTM, SpawnParams);
-	}
-}
-

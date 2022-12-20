@@ -10,6 +10,7 @@
 class UPawnSensingComponent;
 class USAttributeComponent;
 class USWorldUserWidget;
+class USActionComponent;
 
 UCLASS()
 class ACTIONROGUELIKE_API ASAICharacter : public ACharacter
@@ -27,11 +28,17 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<UUserWidget> HealthBarWidgetClass;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<UUserWidget> PlayerSensedWidgetClass;
+
 	UPROPERTY(VisibleAnywhere, Category="AI Senses")
 	UPawnSensingComponent* PawnSensingComp;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USAttributeComponent* AttributeComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Actions")
+	USActionComponent* ActionComp;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HitFlash")
 	FColor HitFlashColor;
@@ -42,6 +49,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HitFlash")
 	float HitFlashSpeed;
 
+
+
 	UFUNCTION()
 	void OnPawnSeen(APawn* Pawn);
 
@@ -51,4 +60,6 @@ protected:
 	void PostInitializeComponents() override;
 
 	void SetTargetActor(AActor* Target);
+
+	void SpawnPlayerSensedWidget(APawn* Pawn);
 };

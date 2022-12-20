@@ -4,7 +4,9 @@
 #include "SMagicProjectile.h"
 #include "Components/SphereComponent.h"
 #include "Components/AudioComponent.h"
+#include "SActionComponent.h"
 #include "SAttributeComponent.h"
+#include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "SGameplayFunctionLibrary.h"
 
@@ -15,14 +17,6 @@ ASMagicProjectile::ASMagicProjectile()
 	AudioComp = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
 	AudioComp->AttachTo(RootComponent);
 	DeltaHealthAmount = -20.0f;
-}
-
-void ASMagicProjectile::OnActorHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
-{
-	if (OtherActor && OtherActor != GetInstigator()) {
-		USGameplayFunctionLibrary::ApplyDirectionalDamage(GetInstigator(), OtherActor, DeltaHealthAmount, Hit);
-		Explode(OtherActor);
-	}
 }
 
 // Called when the game starts or when spawned
@@ -48,7 +42,20 @@ void ASMagicProjectile::Tick(float DeltaTime)
 
 void ASMagicProjectile::OnActorOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) {
 	if (OtherActor && OtherActor != GetInstigator()) {
-		USGameplayFunctionLibrary::ApplyDirectionalDamage(GetInstigator(), OtherActor, DeltaHealthAmount, SweepResult);
+		
+		
+		USActionComponent* ActionComp = Cast<USActionComponent>(OtherActor->GetComponentByClass(USActionComponent::StaticClass()));
+		if (ActionComp && ActionComp->ActiveGameplayTags.HasTag(ParryTag)) {
+			MovementComp->Velocity = -MovementComp->Velocity;
+			SetInstigator(Cast<APawn>(OtherActor));
+			return;
+		}
+
+		if (USGameplayFunctionLibrary::ApplyDirectionalDamage(GetInstigator(), OtherActor, DeltaHealthAmount, SweepResult)) {
+			if (ActionComp) {
+				ActionComp->AddAction(GetInstigator(), BurningActionClass);
+			}
+		}
 		Explode(OtherActor);
 	}
 }

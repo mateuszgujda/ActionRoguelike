@@ -26,7 +26,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void SetAttachedActor(AActor* Actor);
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "UI")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
 	FVector WorldOffset;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")

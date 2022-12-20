@@ -13,35 +13,12 @@ class USpringArmComponent;
 class USInteractionComponent;
 class UAnimMontage;
 class USAttributeComponent;
+class USActionComponent;
 
 UCLASS()
 class ACTIONROGUELIKE_API ASCharacter : public ACharacter
 {
 	GENERATED_BODY()
-
-protected:
-
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	TSubclassOf<ASProjectile> PrimaryProjectileClass;
-
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	TSubclassOf<ASProjectile> SecondaryProjectileClass;
-
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	TSubclassOf<ASProjectile> DashProjectileClass;
-
-
-
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	UAnimMontage* AttackAnim;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Attack")
-	UParticleSystem* CastingEffect;
-
-	FTimerHandle TimerHandle_PrimaryAttack;
-	FTimerHandle TimerHandle_SecondaryAttack;
-	FTimerHandle TimerHandle_DashAction;
-
 
 public:
 	// Sets default values for this character's properties
@@ -64,6 +41,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USAttributeComponent* AttributeComp;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	USActionComponent* ActionComp;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HitFlash")
 	FColor HitFlashColor;
@@ -79,14 +58,11 @@ protected:
 	void MoveForward(float value);
 	void MoveRight(float value);
 	void PrimaryAttack();
-	void PrimaryAttack_TimeElapsed();
 	void SecondaryAttack();
-	void SecondaryAttack_TimeElapsed();
 	void DashAction();
-	void DashAction_TimeElapsed();
-	void FireProjectile(TSubclassOf<ASProjectile> Projectile);
 	void PrimaryInteract();
-	void PlayAttackEffects();
+	void SprintStart();
+	void SprintStop();
 	
 	virtual void PostInitializeComponents() override;
 

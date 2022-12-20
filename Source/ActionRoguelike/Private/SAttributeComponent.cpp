@@ -13,6 +13,10 @@ USAttributeComponent::USAttributeComponent()
 	// ...
 	HealthMax = 100.0f;
 	Health = HealthMax;
+
+	RageMax = 100.0f;
+	Rage = 0;
+	RageFromDamagePercentile = 0.2f;
 }
 
 
@@ -40,6 +44,11 @@ bool USAttributeComponent::ApplyHealthChange(AActor* InstigatorActor, float Delt
 		OnHealthChanged.Broadcast(InstigatorActor, this, Health, ProperDelta);
 	}
 
+	if (ProperDelta < 0.0f) {
+		float RageToAdd = FMath::CeilToFloat(FMath::Abs(ProperDelta * RageFromDamagePercentile));
+		ApplyRageChange(InstigatorActor, RageToAdd);
+	}
+
 	if (ProperDelta < 0.0f && Health <= 0.0f) {
 		ASGameModeBase* GM = GetWorld()->GetAuthGameMode<ASGameModeBase>();
 		GM->OnActorKilled(GetOwner(), InstigatorActor);
@@ -65,6 +74,28 @@ float USAttributeComponent::GetCurrentHealth() const {
 
 float USAttributeComponent::GetMaxHealth() const {
 	return HealthMax;
+}
+
+float USAttributeComponent::GetCurrentRage() const
+{
+	return Rage;
+}
+
+float USAttributeComponent::GetMaxRage() const
+{
+	return RageMax;
+}
+
+bool USAttributeComponent::ApplyRageChange(AActor* InstigatorActor, float DeltaRage) {
+	const float NewRage = FMath::Clamp<float>(Rage + DeltaRage, 0.0f, RageMax);
+	const float ProperDelta = NewRage - Rage;
+	Rage = NewRage;
+	if (ProperDelta != 0) {
+		
+		OnRageChanged.Broadcast(InstigatorActor, this, Rage, ProperDelta);
+	}
+
+	return ProperDelta != 0;
 }
 
 
