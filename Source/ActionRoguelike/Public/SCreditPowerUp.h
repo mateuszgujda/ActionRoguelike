@@ -16,7 +16,6 @@ class ACTIONROGUELIKE_API ASCreditPowerUp : public ASPowerUpBase
 	
 	void Interact_Implementation(APawn* InstigatorPawn) override;
 protected:
-	virtual void StartRecharge() override;
-	virtual void EndRecharge() override;
 	void PostInitializeComponents() override;
+
 };

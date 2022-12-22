@@ -7,7 +7,7 @@
 #include "SPlayerState.generated.h"
 
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCreditsChanged, float, NewCredits);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnCreditsChanged, ASPlayerState*, PlayerState, float, NewCredits, float, Delta);
 /**
  * 
  */
@@ -18,13 +18,21 @@ class ACTIONROGUELIKE_API ASPlayerState : public APlayerState
 	
 
 protected:
+	UPROPERTY(EditDefaultsOnly, ReplicatedUsing="OnRep_Credits", Category = "Credits")
 	float Credits;
+
+	UFUNCTION()
+	void OnRep_Credits(float OldCredits);
 
 public:
 	ASPlayerState();
 	void ApplyCreditsChange(float DeltaCredits);
+	UFUNCTION(BlueprintCallable)
 	float GetCredits() const;
+
+	
 
 	UPROPERTY(BlueprintAssignable)
 	FOnCreditsChanged OnCreditsChanged;
+
 };

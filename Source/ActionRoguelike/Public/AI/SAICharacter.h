@@ -49,7 +49,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HitFlash")
 	float HitFlashSpeed;
 
-
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastSpawnTargetSeenWidget();
 
 	UFUNCTION()
 	void OnPawnSeen(APawn* Pawn);

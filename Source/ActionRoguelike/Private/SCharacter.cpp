@@ -41,7 +41,9 @@ ASCharacter::ASCharacter()
 void ASCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	AttributeComp->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
+	if (AttributeComp) {
+		AttributeComp->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
+	}
 	UMeshComponent* MainMesh = GetMesh();
 	if (MainMesh) {
 		MainMesh->SetScalarParameterValueOnMaterials("HitFlashSpeed", HitFlashSpeed);
@@ -138,6 +140,8 @@ void ASCharacter::OnHealthChanged(AActor* ChangeInstigator, USAttributeComponent
 	if (MeshComp) {
 		if (Delta <= 0) {
 			MeshComp->SetVectorParameterValueOnMaterials("HitFlashColor", FVector(HitFlashColor.R, HitFlashColor.G, HitFlashColor.B));
+				float RageToAdd = FMath::CeilToFloat(FMath::Abs(Delta * OwningComp->GetRageFromDamagePercentile()));
+				AttributeComp->ApplyRageChange(ChangeInstigator, RageToAdd);
 		}
 		else {
 			MeshComp->SetVectorParameterValueOnMaterials("HitFlashColor", FVector(HealFlashColor.R, HealFlashColor.G, HealFlashColor.B));
@@ -148,6 +152,8 @@ void ASCharacter::OnHealthChanged(AActor* ChangeInstigator, USAttributeComponent
 	if (NewHealth <= 0 && Delta < 0) {
 		APlayerController* PlayerController = Cast<APlayerController>(GetController());
 		DisableInput(PlayerController);
+
+		SetLifeSpan(5.0f);
 	}
 }
 

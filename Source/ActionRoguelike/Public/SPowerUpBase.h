@@ -26,7 +26,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Recharge")
 	float RechargeTime;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Recharge")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = "OnRep_RechargeValueChange", Category = "Recharge")
 	bool bIsRecharging;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Boost")
@@ -34,6 +34,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Cost")
 	float InteractionCost;
+
+	UFUNCTION()
+	virtual void OnRep_RechargeValueChange();
 
 	FTimerHandle RechargeTimeHandle;
 	ECollisionEnabled::Type DefaultCollision;

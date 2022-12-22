@@ -3,6 +3,8 @@
 
 #include "SAbilityPowerUp.h"
 #include "SActionComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/GameStateBase.h"
 
 void ASAbilityPowerUp::Interact_Implementation(APawn* InstigatorPawn)
 {
@@ -21,11 +23,6 @@ void ASAbilityPowerUp::Interact_Implementation(APawn* InstigatorPawn)
 
 	ActionComp->AddAction(InstigatorPawn, ActionToGrant);
 	StartRecharge();
-}
-
-void ASAbilityPowerUp::StartRecharge() {
-	RootComp->SetScalarParameterValueOnMaterials("ConsumeTime", GetWorld()->TimeSeconds);
-	Super::StartRecharge();
 }
 
 void ASAbilityPowerUp::PostInitializeComponents()

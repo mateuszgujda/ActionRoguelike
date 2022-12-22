@@ -5,6 +5,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "SPlayerState.h"
 #include "SAttributeComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/GameStateBase.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ASPowerUpBase::ASPowerUpBase()
@@ -16,6 +19,13 @@ ASPowerUpBase::ASPowerUpBase()
 	InteractionCost = 0.0f;
 	RootComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
 	SetRootComponent(RootComp);
+	SetReplicates(true);
+}
+
+void ASPowerUpBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ASPowerUpBase, bIsRecharging);
 }
 
 void ASPowerUpBase::Interact_Implementation(APawn* InstigatorPawn)
@@ -36,6 +46,34 @@ void ASPowerUpBase::Interact_Implementation(APawn* InstigatorPawn)
 	}
 }
 
+void ASPowerUpBase::OnRep_RechargeValueChange()
+{
+	if (bIsRecharging) {
+
+		RootComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		RootComp->SetScalarParameterValueOnMaterials("ConsumeTime", UGameplayStatics::GetGameState(GetWorld())->GetServerWorldTimeSeconds());
+		//if (HasAuthority()) {
+		//	GetWorldTimerManager().SetTimer(RechargeTimeHandle, this, &ASPowerUpBase::EndRecharge, RechargeTime);
+		//	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.0f, FColor::Red, "EnableServer ");
+		//}
+		//else {
+		//	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.0f, FColor::Red, "EnableClient" );
+		//}
+	}
+	else {
+
+		//if (HasAuthority()) {
+		//	GetWorldTimerManager().ClearTimer(RechargeTimeHandle);
+		//	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.0f, FColor::Red, "DisableServer ");
+		//}
+		//else {
+		//	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.0f, FColor::Red, "DisableClient" );
+		//}
+		RootComp->SetScalarParameterValueOnMaterials("ConsumeTime", 0.0f);
+		RootComp->SetCollisionEnabled(DefaultCollision);
+	}
+}
+
 // Called when the game starts or when spawned
 void ASPowerUpBase::BeginPlay()
 {
@@ -46,15 +84,15 @@ void ASPowerUpBase::BeginPlay()
 void ASPowerUpBase::StartRecharge()
 {
 	bIsRecharging = true;
-	RootComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	GetWorldTimerManager().SetTimer(RechargeTimeHandle, this, &ASPowerUpBase::EndRecharge, RechargeTime);
+	OnRep_RechargeValueChange();
+
 }
 
 void ASPowerUpBase::EndRecharge()
 {
-	GetWorldTimerManager().ClearTimer(RechargeTimeHandle);
+
 	bIsRecharging = false;
-	RootComp->SetCollisionEnabled(DefaultCollision);
+	OnRep_RechargeValueChange();
 }
 
 // Called every frame

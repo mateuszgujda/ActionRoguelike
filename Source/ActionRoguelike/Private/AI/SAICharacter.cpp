@@ -33,7 +33,6 @@ ASAICharacter::ASAICharacter()
 }
 
 void ASAICharacter::OnPawnSeen(APawn* Pawn) {
-	
 	if (PlayerSensedWidgetClass) {
 		SpawnPlayerSensedWidget(Pawn);
 	}
@@ -41,14 +40,16 @@ void ASAICharacter::OnPawnSeen(APawn* Pawn) {
 		DrawDebugString(GetWorld(), GetActorLocation(), "Player Spotted", nullptr, FColor::White, 4.0f, true);
 	}
 	SetTargetActor(Pawn);
-
 }
 
 void ASAICharacter::PostInitializeComponents() {
 	Super::PostInitializeComponents();
-
-	PawnSensingComp->OnSeePawn.AddDynamic(this, &ASAICharacter::OnPawnSeen);
-	AttributeComp->OnHealthChanged.AddDynamic(this, &ASAICharacter::OnHealthChanged);
+	if (PawnSensingComp) {
+		PawnSensingComp->OnSeePawn.AddDynamic(this, &ASAICharacter::OnPawnSeen);
+	}
+	if (AttributeComp) {
+		AttributeComp->OnHealthChanged.AddDynamic(this, &ASAICharacter::OnHealthChanged);
+	}
 
 	UMeshComponent* MainMesh = GetMesh();
 	if (MainMesh) {
@@ -115,12 +116,16 @@ void ASAICharacter::SpawnPlayerSensedWidget(APawn* Pawn)
 	if (AIC) {
 		UBlackboardComponent* BBComp = AIC->GetBlackboardComponent();
 		APawn* TargetActor = Cast<APawn>(BBComp->GetValueAsObject(USAIStatics::GetAITargetActorKeyName()));
-		if (TargetActor != Pawn && Pawn->IsPlayerControlled()) {
-			USWorldUserWidget* PlayerSesedWidget = CreateWidget<USWorldUserWidget>(GetWorld(), PlayerSensedWidgetClass);
-			if (PlayerSesedWidget) {
-				PlayerSesedWidget->SetAttachedActor(this);
-				PlayerSesedWidget->AddToViewport(10);
-			}
+		if (TargetActor && Pawn && TargetActor != Pawn) {
+			MulticastSpawnTargetSeenWidget();
 		}
+	}
+}
+
+void ASAICharacter::MulticastSpawnTargetSeenWidget_Implementation() {
+	USWorldUserWidget* PlayerSesedWidget = CreateWidget<USWorldUserWidget>(GetWorld(), PlayerSensedWidgetClass);
+	if (PlayerSesedWidget) {
+		PlayerSesedWidget->SetAttachedActor(this);
+		PlayerSesedWidget->AddToViewport(10);
 	}
 }

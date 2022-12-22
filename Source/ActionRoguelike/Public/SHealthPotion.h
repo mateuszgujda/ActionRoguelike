@@ -14,7 +14,4 @@ class ACTIONROGUELIKE_API ASHealthPotion : public ASPowerUpBase
 {
 	GENERATED_BODY()
 	
-
-protected:
-	virtual void StartRecharge() override;
 };

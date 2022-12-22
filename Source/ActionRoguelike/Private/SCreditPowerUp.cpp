@@ -3,12 +3,20 @@
 
 #include "SCreditPowerUp.h"
 #include "SPlayerState.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/GameStateBase.h"
 
 void ASCreditPowerUp::Interact_Implementation(APawn* InstigatorPawn)
 {
 	if (InstigatorPawn) {
 		ASPlayerState* PS = Cast<ASPlayerState>(InstigatorPawn->GetPlayerState());
 		if (PS) {
+			if (HasAuthority()) {
+				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.0f, FColor::Red, "PlayerState After Server ");
+			}
+			else {
+				GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5.0f, FColor::Red, "PlayerState After Client");
+			}
 			PS->ApplyCreditsChange(BoostValue);
 
 			StartRecharge();
@@ -16,17 +24,9 @@ void ASCreditPowerUp::Interact_Implementation(APawn* InstigatorPawn)
 	}
 }
 
-void ASCreditPowerUp::StartRecharge() {
-	RootComp->SetScalarParameterValueOnMaterials("ConsumeTime", GetWorld()->TimeSeconds);
-	Super::StartRecharge();
-}
-
-void ASCreditPowerUp::EndRecharge() {
-	Super::EndRecharge();
-}
-
 void ASCreditPowerUp::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 	RootComp->SetScalarParameterValueOnMaterials("RechargeDuration", RechargeTime);
 }
+

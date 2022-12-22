@@ -52,7 +52,7 @@ void ASMagicProjectile::OnActorOverlap(UPrimitiveComponent* OverlappedComponent,
 		}
 
 		if (USGameplayFunctionLibrary::ApplyDirectionalDamage(GetInstigator(), OtherActor, DeltaHealthAmount, SweepResult)) {
-			if (ActionComp) {
+			if (ActionComp && HasAuthority()) {
 				ActionComp->AddAction(GetInstigator(), BurningActionClass);
 			}
 		}
@@ -76,6 +76,8 @@ void ASMagicProjectile::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	SphereComp->OnComponentBeginOverlap.AddDynamic(this, &ASMagicProjectile::OnActorOverlap);
-	SphereComp->OnComponentHit.AddDynamic(this, &ASMagicProjectile::OnActorHit);
+	if (SphereComp) {
+		SphereComp->OnComponentBeginOverlap.AddDynamic(this, &ASMagicProjectile::OnActorOverlap);
+		SphereComp->OnComponentHit.AddDynamic(this, &ASMagicProjectile::OnActorHit);
+	}
 }

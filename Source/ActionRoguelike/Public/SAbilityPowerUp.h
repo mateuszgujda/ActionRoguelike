@@ -22,7 +22,5 @@ protected:
 
 	void Interact_Implementation(APawn* InstigatorPawn) override;
 
-	void StartRecharge() override;
-
 	void PostInitializeComponents() override;
 };

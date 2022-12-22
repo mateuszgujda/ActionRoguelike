@@ -2,10 +2,5 @@
 
 
 #include "SHealthPotion.h"
-
-void ASHealthPotion::StartRecharge()
-{
-	RootComp->SetScalarParameterValueOnMaterials("ConsumeTime", GetWorld()->TimeSeconds);
-	Super::StartRecharge();
-	
-}
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/GameStateBase.h"
